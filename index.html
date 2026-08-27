@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cuaderno Pomodoro · Enfoque académico</title>
+
+<!-- Configuración para instalar la app en el celular (PWA) -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#120b1c">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pomodoro">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Escena de fondo: lámpara de escritorio nocturna + ilustración mental + textura de papel -->
+  <div class="scene-bg" aria-hidden="true">
+    <div class="lamp-glow"></div>
+    <div class="ruled-lines"></div>
+
+    <svg class="mind-illustration" viewBox="0 0 480 480" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="mindStroke" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="var(--lamp)"/>
+          <stop offset="100%" stop-color="var(--mint)"/>
+        </linearGradient>
+      </defs>
+      <path class="mind-silhouette" d="M170,58
+        C214,36 262,40 288,64
+        C304,78 300,92 316,100
+        C324,104 322,114 312,118
+        C310,130 300,136 292,142
+        C288,152 292,162 302,166
+        C320,172 338,182 344,202
+        L348,300 L232,300
+        L222,232
+        C186,222 152,198 138,164
+        C124,130 130,92 170,58 Z" />
+      <g class="mind-nodes">
+        <line x1="200" y1="110" x2="240" y2="90"/>
+        <line x1="240" y1="90" x2="270" y2="110"/>
+        <line x1="200" y1="110" x2="190" y2="150"/>
+        <line x1="190" y1="150" x2="230" y2="170"/>
+        <line x1="230" y1="170" x2="270" y2="110"/>
+        <line x1="230" y1="170" x2="220" y2="210"/>
+        <line x1="220" y1="210" x2="260" y2="230"/>
+        <line x1="270" y1="110" x2="300" y2="140"/>
+        <line x1="300" y1="140" x2="260" y2="230"/>
+        <line x1="190" y1="150" x2="160" y2="160"/>
+        <line x1="160" y1="160" x2="190" y2="190"/>
+        <line x1="190" y1="190" x2="220" y2="210"/>
+        <circle cx="200" cy="110" r="3.4"/>
+        <circle cx="240" cy="90" r="3.4"/>
+        <circle cx="270" cy="110" r="3.4"/>
+        <circle cx="190" cy="150" r="3.4"/>
+        <circle cx="230" cy="170" r="3.4"/>
+        <circle cx="220" cy="210" r="3.4"/>
+        <circle cx="260" cy="230" r="3.4"/>
+        <circle cx="300" cy="140" r="3.4"/>
+        <circle cx="160" cy="160" r="3.4"/>
+        <circle cx="190" cy="190" r="3.4"/>
+      </g>
+      <g class="mind-cycle-ring" transform="translate(238,150)">
+        <circle r="46" class="cycle-track"/>
+        <circle r="46" class="cycle-seg seg-1" stroke-dasharray="66 205" stroke-dashoffset="0"/>
+        <circle r="46" class="cycle-seg seg-2" stroke-dasharray="66 205" stroke-dashoffset="-72.2"/>
+        <circle r="46" class="cycle-seg seg-3" stroke-dasharray="66 205" stroke-dashoffset="-144.4"/>
+        <circle r="46" class="cycle-seg seg-4" stroke-dasharray="66 205" stroke-dashoffset="-216.6"/>
+      </g>
+    </svg>
+
+    <div class="grain"></div>
+  </div>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">§</span>
+      <h1>Cuaderno<span class="brand-accent">Pomodoro</span></h1>
+    </div>
+
+    <div class="topbar-stats" aria-live="polite">
+      <div class="mascot" id="mascot" title="Tu compañero de estudio"></div>
+
+      <div class="pill pill-level">
+        <span class="pill-label">Nivel</span>
+        <span class="pill-value" id="level-value">1</span>
+      </div>
+      <div class="pill">
+        <span class="pill-label">Racha</span>
+        <span class="pill-value" id="streak-value">0 🔥</span>
+      </div>
+      <div class="pill">
+        <span class="pill-label">Puntos</span>
+        <span class="pill-value" id="points-value">0 ⭐</span>
+      </div>
+
+      <button class="btn btn-ghost btn-focus" id="focus-mode-btn" type="button" aria-pressed="false">
+        🧘 Modo concentración
+      </button>
+    </div>
+  </header>
+
+  <!-- Notificación de subida de nivel: aparece brevemente y se oculta sola -->
+  <div class="level-toast" id="level-toast" role="status" aria-live="assertive">
+    <span class="level-toast-icon">🎉</span>
+    <div class="level-toast-text">
+      <strong id="level-toast-title">¡Subiste de nivel!</strong>
+      <span id="level-toast-sub">Nivel 2</span>
+    </div>
+  </div>
+
+  <!-- Aviso de recordatorios: solo aparece si hay tareas vencidas o para hoy -->
+  <div class="reminder-banner" id="reminder-banner" role="status" aria-live="polite" hidden></div>
+
+  <main class="layout">
+
+    <!-- ===================== TEMPORIZADOR ===================== -->
+    <section class="card timer-card" aria-labelledby="timer-heading">
+      <h2 id="timer-heading" class="visually-hidden">Temporizador Pomodoro</h2>
+
+      <div class="mode-tabs" role="tablist" aria-label="Fase actual">
+        <button class="mode-tab active" data-mode="focus" role="tab" aria-selected="true">Enfoque</button>
+        <button class="mode-tab" data-mode="short" role="tab" aria-selected="false">Descanso corto</button>
+        <button class="mode-tab" data-mode="long" role="tab" aria-selected="false">Descanso largo</button>
+      </div>
+
+      <div class="ring-wrapper">
+        <svg class="ring" viewBox="0 0 220 220" aria-hidden="true">
+          <circle class="ring-track" cx="110" cy="110" r="100"></circle>
+          <circle class="ring-progress" id="ring-progress" cx="110" cy="110" r="100"></circle>
+        </svg>
+        <div class="ring-center">
+          <span class="time-display" id="time-display">25:00</span>
+          <span class="phase-label" id="phase-label">bloque de enfoque</span>
+        </div>
+      </div>
+
+      <div class="timer-controls">
+        <button class="btn btn-ghost" id="reset-btn" aria-label="Reiniciar ciclo">⟲ Reiniciar</button>
+        <button class="btn btn-primary" id="start-btn">▶ Iniciar</button>
+        <button class="btn btn-ghost" id="skip-btn" aria-label="Saltar a la siguiente fase">Saltar ⇥</button>
+      </div>
+
+      <details class="settings">
+        <summary>Ajustar duraciones</summary>
+        <div class="settings-grid">
+          <label>Enfoque (min)
+            <input type="number" id="dur-focus" min="1" max="90" value="25">
+          </label>
+          <label>Descanso corto (min)
+            <input type="number" id="dur-short" min="1" max="30" value="5">
+          </label>
+          <label>Descanso largo (min)
+            <input type="number" id="dur-long" min="1" max="60" value="15">
+          </label>
+          <label>Pomodoros hasta descanso largo
+            <input type="number" id="dur-cycles" min="2" max="8" value="4">
+          </label>
+        </div>
+      </details>
+
+      <p class="quote" id="quote-box">Cada pomodoro completado es una prueba de que puedes con esto.</p>
+    </section>
+
+    <!-- ===================== TAREAS ===================== -->
+    <section class="card tasks-card" aria-labelledby="tasks-heading">
+      <h2 id="tasks-heading">Lista de tareas</h2>
+
+      <form id="task-form" class="task-form">
+        <input type="text" id="task-name" placeholder="Ej. Leer capítulo 3 de Cálculo" required aria-label="Nombre de la tarea">
+
+        <select id="task-priority" aria-label="Prioridad de la tarea">
+          <option value="alta">🔴 Alta</option>
+          <option value="media" selected>🟡 Media</option>
+          <option value="baja">🟢 Baja</option>
+        </select>
+
+        <input type="date" id="task-due" aria-label="Fecha de entrega (opcional)">
+
+        <input type="number" id="task-pomos" min="1" max="20" value="1" aria-label="Pomodoros estimados">
+
+        <button type="submit" class="btn btn-small">+ Añadir</button>
+      </form>
+
+      <ul class="task-list" id="task-list">
+        <!-- se llena por JS -->
+      </ul>
+
+      <p class="empty-hint" id="empty-hint">Aún no hay tareas. Anota la primera de tu día.</p>
+    </section>
+
+    <!-- ===================== ESTADÍSTICAS ===================== -->
+    <section class="card stats-card" aria-labelledby="stats-heading">
+      <h2 id="stats-heading">Estadísticas de la semana</h2>
+
+      <div class="stats-summary">
+        <div class="stat-block">
+          <span class="stat-number" id="stat-today">0</span>
+          <span class="stat-label">pomodoros hoy</span>
+        </div>
+        <div class="stat-block">
+          <span class="stat-number" id="stat-total-time">0h 0m</span>
+          <span class="stat-label">tiempo total</span>
+        </div>
+        <div class="stat-block">
+          <span class="stat-number" id="stat-best-streak">0</span>
+          <span class="stat-label">mejor racha</span>
+        </div>
+      </div>
+
+      <canvas id="week-chart" height="140" aria-label="Gráfico de pomodoros por día de la semana" role="img"></canvas>
+
+      <details class="history-block">
+        <summary>Historial de sesiones</summary>
+        <ul class="history-list" id="history-list">
+          <!-- se llena por JS -->
+        </ul>
+        <p class="empty-hint" id="history-empty-hint">Todavía no completas ninguna sesión.</p>
+      </details>
+
+      <div class="data-io">
+        <button class="btn btn-ghost" id="export-btn" type="button">⬇ Exportar mis datos</button>
+        <label class="btn btn-ghost" for="import-input">⬆ Importar datos</label>
+        <input type="file" id="import-input" accept="application/json" hidden>
+      </div>
+      <p class="io-status" id="io-status" role="status" aria-live="polite"></p>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <p>Diseñado para acompañar tu sesión de estudio — tus datos se guardan solo en este navegador, sin registro ni recolección de información personal.</p>
+  </footer>
+
+<script src="script.js"></script>
+</body>
+</html>
